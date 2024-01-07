@@ -1,0 +1,13 @@
+# Each line represents a purchase of an option
+# The format is: Type, Position (L for long, S for short), Strike Price, Time to Expiry (in days), Trade Volume
+
+# Format for Type:
+# - C: European Call
+# - P: European Put
+
+C,L,4800,60,10 # Long European Call with strike price 4800, 60 days to expiry, trade volume of 10
+C,S,5200,60,5 # Short European Call with strike price 5200, 60 days to expiry, trade volume of 5
+P,L,5000,60,8 # Long European Put with strike price 5000, 60 days to expiry, trade volume of 8
+C,S,5400,60,7 # Short European Call with strike price 5400, 60 days to expiry, trade volume of 7
+P,S,4600,60,6 # Short European Put with strike price 4600, 60 days to expiry, trade volume of 6
+C,L,5100,60,9 # Long European Call with strike price 5100, 60 days to expiry, trade volume of 9
