@@ -1,100 +1,136 @@
 #include <iostream>
-#include <sstream>
+#include <fstream>
+#include <vector>
 #include <cmath>
 #include <random>
 
-class BlackScholes {
+class FinancialModel {
 private:
-    std::string dir;
-    std::string optType;
-    double S;  // Spot price of the underlying asset
-    double K;  // Strike price of the option
-    double r;  // Risk-free interest rate
-    double sigma;  // Volatility of the underlying asset
-    double T;  // Time to expiration of the option
-    double Q; // Trade volume
+    double mu;  // Annual mean return
+    double sigma;  // Annual standard deviation
+    std::default_random_engine generator;
+    std::lognormal_distribution<double> distribution;
+    std::vector<double> logReturns;
 
 public:
-    // Constructor to initialize the parameters
-    BlackScholes(std::string direction, std::string optionType, double spotPrice, double strikePrice, double interestRate, double volatility, double timeToExpiration, double quantity)
-        : dir(direction), optType(optionType), S(spotPrice), K(strikePrice), r(interestRate), sigma(volatility), T(timeToExpiration), Q(quantity) {}
+    FinancialModel(double meanReturn, double stddev)
+        : mu(meanReturn), sigma(stddev) {
+        // Calculate mu and sigma for the lognormal distribution
+        double muLog = std::log(1 + mu) - 0.5 * std::log(1 + (sigma * sigma) / ((1 + mu) * (1 + mu)));
+        double sigmaLog = std::sqrt(std::log(1 + (sigma * sigma) / ((1 + mu) * (1 + mu))));
 
-    // Method to calculate the Black-Scholes option price
-    double calculateOptionPrice() {
-        T = T / 365;
+        // Set up the lognormal distribution
+        distribution = std::lognormal_distribution<double>(muLog, sigmaLog);
 
-        double d1 = (log(S / K) + (r + 0.5 * pow(sigma, 2)) * T) / (sigma * sqrt(T));
-        double d2 = d1 - sigma * sqrt(T);
-
-        double dir_num;
-
-        if (dir == "L") {
-            dir_num = 1;
-        } else if (dir == "S") {
-            dir_num = -1;
-        }
-
-        if (optType == "C") {
-            return Q * dir_num * (S * normalDistribution(d1) - K * exp(-r * T) * normalDistribution(d2));
-        } else if (optType == "P") {
-            return Q * dir_num * (K * exp(-r * T) * normalDistribution(-d2) - S * normalDistribution(-d1));
-        }
-
-        // Default case (should not reach here)
-        return 0.0;
+        // Seed the random number generator
+        std::random_device rd;
+        generator.seed(rd());
     }
 
-private:
-    // Helper method to calculate the cumulative distribution function of the standard normal distribution
-    double normalDistribution(double x) {
-        static const double invSqrt2Pi = 0.3989422804014337;  // 1 / sqrt(2 * pi)
-        return 0.5 * (1.0 + erf(x * invSqrt2Pi));
+    // Function to generate annual return
+    double generateAnnualReturn() {
+        return distribution(generator);
+    }
+
+    // Function to generate a list of annual returns
+    std::vector<double> generateAnnualReturnList(int numReturns) {
+        std::vector<double> returns;
+        returns.reserve(numReturns);
+
+        for (int i = 0; i < numReturns; ++i) {
+            double annualReturn = generateAnnualReturn();
+            returns.push_back(annualReturn);
+        }
+
+        return returns;
+    }
+
+    // Function to process annual returns and calculate log returns
+    void processReturns(const std::vector<double>& annualReturns) {
+        logReturns.clear();
+        logReturns.reserve(annualReturns.size());
+
+        for (const auto& annualReturn : annualReturns) {
+            // double logReturn = std::log(1 + annualReturn);
+            double logReturn = std::log(annualReturn);
+            logReturns.push_back(logReturn);
+        }
+    }
+
+    // Function to calculate prices from log returns and initial spot price
+    std::vector<double> calculatePrices(double spotPrice) const {
+        std::vector<double> prices;
+        // prices.reserve(logReturns.size() + 1);
+        prices.reserve(logReturns.size());
+
+        // double currentPrice = spotPrice;
+
+        // The first price is the spot price
+        // prices.push_back(currentPrice);
+
+        // Calculate subsequent prices based on log returns
+        // for (const auto& logReturn : logReturns) {
+        //     currentPrice *= std::exp(logReturn);
+        //     prices.push_back(currentPrice);
+        // }
+        
+        // Calculate subsequent prices based on log returns
+        for (const auto& logReturn : logReturns) {
+            double scenarioPrice = spotPrice * (1 + logReturn);
+            prices.push_back(scenarioPrice);
+        }
+
+        return prices;
+    }
+
+    // Function to save data to a CSV file
+    void saveToCSV(const std::vector<double>& data, const std::string& filename) {
+        std::ofstream outputFile(filename);
+
+        if (outputFile.is_open()) {
+            for (const auto& value : data) {
+                outputFile << value << "\n";
+            }
+            outputFile.close();
+            std::cout << "Data has been saved to: " << filename << std::endl;
+        } else {
+            std::cerr << "Unable to open file: " << filename << std::endl;
+        }
+    }
+
+    // Function to run the financial model
+    void runModel(int numReturns, double spotPrice) {
+        // Generate annual returns
+        std::vector<double> returnList = generateAnnualReturnList(numReturns);
+
+        // Save annual returns to a CSV file
+        saveToCSV(returnList, "annual_returns.csv");
+
+        // Process annual returns to calculate log returns
+        processReturns(returnList);
+
+        // Calculate prices based on log returns
+        std::vector<double> priceList = calculatePrices(spotPrice);
+
+        // Save log returns to a CSV file
+        saveToCSV(logReturns, "log_returns.csv");
+
+        // Save prices to a CSV file
+        saveToCSV(priceList, "asset_prices.csv");
     }
 };
 
 int main() {
-    // Example usage
-    std::string direction = "L";
-    std::string optionType = "C";
-    double spotPrice = 5000.0;
-    double strikePrice = 4800.0;
-    double interestRate = 0.05;
-    double volatility = 0.2;
-    double timeToExpiration = 60.0;
-    double quantity = 10.0;
+    // Set asset return parameters
+    double meanReturn = 0.05;      // 5% annual mean return
+    double stdDev = 0.2;           // 20% annual standard deviation
+    double spotPrice = 5000;       // typical S&P500 spot price
 
-    // std::cout << "Enter variables separated by commas (e.g., C, L, 4800.0, 60.0, 10.0): ";
+    // Create FinancialModel object
+    FinancialModel financialModel(meanReturn, stdDev);
 
-    // std::string userInput;
-    // std::getline(std::cin, userInput);
-    // std::istringstream input_stream(userInput);
-
-    // // Variables to store the parsed values
-    // std::string optionType, direction;
-    // double strikePrice, timeToExpiration, quantity;
-
-    // // Attempt to read the variables from the stream
-    // if (std::getline(input_stream, optionType, ',') &&
-    //     std::getline(input_stream, direction, ',') &&
-    //     (input_stream >> strikePrice >> std::ws && input_stream.get() == ',') &&
-    //     (input_stream >> timeToExpiration >> std::ws && input_stream.get() == ',') &&
-    //     (input_stream >> quantity)) {
-    //     // Successfully parsed the variables
-    //     std::cout << "optType: " << optionType << std::endl;
-    //     std::cout << "dir: " << direction << std::endl;
-    //     std::cout << "K: " << strikePrice << std::endl;
-    //     std::cout << "T: " << timeToExpiration << std::endl;
-    //     std::cout << "Q: " << quantity << std::endl;
-    // } else {
-    //     // Failed to parse the variables
-    //     std::cerr << "Error parsing input. Make sure to use commas to separate variables." << std::endl;
-    // }
-
-    BlackScholes option(direction, optionType, spotPrice, strikePrice, interestRate, volatility, timeToExpiration, quantity);
-
-    // Calculate and print call option price
-    double callOptionPrice = option.calculateOptionPrice();
-    std::cout << "Black-Scholes Option Price: " << callOptionPrice << std::endl;
+    // Run the financial model
+    financialModel.runModel(10000, spotPrice);
 
     return 0;
 }
