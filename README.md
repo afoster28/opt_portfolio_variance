@@ -12,7 +12,7 @@ The program performs the following processing steps:
 * Parameters given: $S = 5000, μ = 5\\%, σ = 20\\%$
 * Extract days to maturity of the options
 * Calculate
-  * t = Days To Maturity/365 = 60/365$
+  * $t = Days To Maturity/365 = 60/365$
   * $μ_{log} = log(S) + (μ - σ^2/2)t$
   * $σ_{log} = \sqrt{σ^2t}$
   * The variables were converted as above using the Black-Scholes framework, resulting in parameters for the normal distribution of log prices
