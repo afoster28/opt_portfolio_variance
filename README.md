@@ -9,4 +9,7 @@ Prerequisites: C++ compiler, input data in the same directory as `opt_v12.cpp` (
 
 The program performs the following processing steps:
 * Read csv input containing options
-* Calculate $μ_{log} = log(S) + (μ - σ^2/2)t$
+* Calculate
+	$μ_{log} = log(S) + (μ - σ^2/2)t$
+	$σ_{log} = sqrt{σ^2t}$
+* Set up random number generator for sampling
