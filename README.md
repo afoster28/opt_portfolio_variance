@@ -1,5 +1,5 @@
 # opt_portfolio_variance
-## Option portfolio variance in CPP
+## Option Portfolio Variance in C++
 
 Authors: Adam Foster, Sercan Akbay
 
