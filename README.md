@@ -3,4 +3,10 @@
 
 Authors: Adam Foster, Sercan Akbay
 
-This is the repo for the project on option portfolio variance in C++. The aim is to build a program that computes payout variance of a portfolio of options that, once called, describes variance before and after purchase.
+The program feeds in a portfolio of options, samples underlying asset prices at maturity, calculates payoffs, portfolio payoffs and summary statistics per portfolio and persists final data and reference data.
+
+Prerequisites: C++ compiler, input data in the same directory as `opt_v12.cpp` (e.g. sample_small.csv)
+
+The program performs the following processing steps:
+* Read csv input containing options
+* Calculate $μ_log = log(spot) + (μ - σ^2/2) * t$
