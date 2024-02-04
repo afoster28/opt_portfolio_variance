@@ -47,7 +47,7 @@ Program features:
 
 Potential improvements:
 * Model objects could be reallocated to more classes and function scope set more accurately
-* Even more efficient approaches could be considered, e.g. sampling based on the outcomes of the normal distribution cdf given its known shape ($1/N$ convergence instead of $1/sqrt{N}$) or the covariance matrix approach
+* Even more efficient approaches could be considered, e.g. sampling based on the outcomes of the normal distribution cdf given its known shape ($1/N$ convergence instead of $1/\sqrt{N}$) or the covariance matrix approach
 * A manual option entry feature for the user
 * UI for remote launching of the program
 * Integrated and ongoing testing
