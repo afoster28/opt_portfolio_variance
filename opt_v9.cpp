@@ -5,6 +5,7 @@
 #include <random>
 #include <sstream>
 #include <iomanip>
+#include <stdexcept> // Include for std::runtime_error
 #include <algorithm> // Include for std::remove_if
 #include <cctype>    // Include for std::isspace
 
@@ -32,7 +33,7 @@ private:
     std::vector<Option> optionsList; // List of options
 
 public:
-    FinancialModel(double spotPrice, double meanReturn, double stddev)
+    FinancialModel(double spotPrice, double meanReturn, double stddev, const std::string &filename)
         : spot(spotPrice), mu(meanReturn), sigma(stddev)
     {
         // Calculate mu and sigma sq of log price for the normal distribution
@@ -47,7 +48,9 @@ public:
         generator.seed(rd());
 
         // Load options from input csv
-        loadOptionsFromCSV("sample_small.csv");
+        if (!loadOptionsFromCSV(filename)) {
+            throw std::runtime_error("Unable to open file: " + filename);
+        }
     }
 
     // Function to split a string based on a delimiter
@@ -62,11 +65,11 @@ public:
     }
 
     // Function to load options from a CSV file
-    void loadOptionsFromCSV(const std::string& filename) {
+    bool loadOptionsFromCSV(const std::string& filename) {
         std::ifstream inputFile(filename);
         if (!inputFile.is_open()) {
             std::cerr << "Unable to open file: " << filename << std::endl;
-            return;
+            return false;
         }
 
         std::string line;
@@ -95,6 +98,8 @@ public:
 
         // Debugging statement
         std::cout << "Number of options loaded: " << optionsList.size() << std::endl;
+
+        return true;
     }
 
     // Function to generate price
@@ -168,15 +173,16 @@ public:
     void writeCombined(const std::vector<double>& assetPrices,
                 const std::vector<std::vector<double>>& optionPayouts,
                 const std::vector<Option>& optionsList,
-                const std::string& filename) {
+                const std::string& filename, size_t numOptions) {
         std::ofstream outputFile(filename);
 
         if (outputFile.is_open()) {
             // Write column headers
             outputFile << "asset_prices";
 
-            // Write option_payouts headers
-            for (const auto& option : optionsList) {
+            // Write option_payouts headers for the relevant options
+            for (size_t j = 0; j < numOptions; ++j) {
+                const auto& option = optionsList[j];
                 outputFile << ',' << option.type << '|' << option.direction << '|' << option.strike
                         << '|' << option.timeToMaturity << '|' << option.quantity;
             }
@@ -187,9 +193,9 @@ public:
                 // Write asset_prices
                 outputFile << std::fixed << std::setprecision(2) << assetPrices[i];
 
-                // Write option_payouts columns
-                for (const auto& optionPayout : optionPayouts[i]) {
-                    outputFile << ',' << optionPayout;
+                // Write option_payouts columns for the relevant options
+                for (size_t j = 0; j < numOptions; ++j) {
+                    outputFile << ',' << optionPayouts[i][j];
                 }
 
                 outputFile << "\n";
@@ -240,14 +246,8 @@ public:
         // Generate prices (moved outside the loop)
         std::vector<double> priceList = generatePrices(numPrices);
 
-        // Save combined data to CSV
-        // std::vector<std::vector<double>> optionPayouts = calculateOptionPayouts(priceList);
-        // writeCombined(priceList, optionPayouts, optionsList, "combined_table.csv");
-
         // Calculate and store option count, mean, variance, and standard deviation
         std::vector<std::vector<double>> resultMatrix = calculatePortfolioStatistics(optionsList.size(), priceList);
-        // Save results to CSV
-        writeStats(resultMatrix, "result_matrix.csv");
     }
 
 private:
@@ -260,15 +260,34 @@ private:
         std::cout << "Enter 'fast' for fast run or 'sequential' for sequential run: ";
         std::cin >> runType;
 
+        double varianceCutoff = 0.0;
+
+        std::vector<double> initialRow{0, 0, 0, 0};
+        resultMatrix.push_back(initialRow);
+
+        // Print the initial row of statistics
+        std::cout << "Option Count: " << 0
+                << ", Mean: " << 0
+                << ", Variance: " << 0
+                << ", Standard Deviation: " << 0 << std::endl;
+
         for (size_t i = 0; i < numOptions; ++i) {
             // Check if the run is 'sequential' and prompt the user to continue
             if (runType == "sequential") {
+                if (i == 0) {
+                    std::cout << "Please input variance cutoff: ";
+                    std::cin >> varianceCutoff;
+                }
+                
                 char continueOption;
                 std::cout << "Do you want to continue with the next option? (y/n): ";
                 std::cin >> continueOption;
 
                 if (continueOption == 'n') {
                     // Break the loop if the user chooses not to continue
+                    std::vector<Option> partialOptionsOut(optionsList.begin(), optionsList.begin() + i);
+                    std::vector<std::vector<double>> optionPayoutsOut = calculateOptionPayouts(priceList, numOptions);
+                    writeCombined(priceList, optionPayoutsOut, partialOptionsOut, "combined_table.csv", partialOptionsOut.size());
                     break;
                 }
             }
@@ -312,7 +331,21 @@ private:
                     << ", Mean: " << mean
                     << ", Variance: " << variance
                     << ", Standard Deviation: " << stdDeviation << std::endl;
+
+            if (runType == "sequential" && variance > varianceCutoff){
+                writeCombined(priceList, optionPayouts, partialOptions, "combined_table.csv", partialOptions.size());
+                std::cout << "Variance cutoff exceed, ending program" << std::endl;
+                break;
+            }
+
+            // Save combined data to CSV in the last iteration or if user chooses not to continue
+            if (i == numOptions - 1) {
+                writeCombined(priceList, optionPayouts, partialOptions, "combined_table.csv", partialOptions.size());
+            }
         }
+
+        // Save results to CSV
+        writeStats(resultMatrix, "result_matrix.csv");
 
         return resultMatrix;
     }
@@ -320,16 +353,26 @@ private:
 
 int main()
 {
-    // Set asset parameters
-    double meanReturn = 0.05; // 5% annual mean return
-    double stdDev = 0.2;      // 20% annual standard deviation
-    double spotPrice = 5000;  // typical S&P500 spot price
+    try {
+        // Get the input filename from the user
+        std::string inputFilename;
+        std::cout << "Enter the name of the input CSV file: ";
+        std::cin >> inputFilename;
 
-    // Create FinancialModel object
-    FinancialModel financialModel(spotPrice, meanReturn, stdDev);
+        // Set asset parameters
+        double meanReturn = 0.05; // 5% annual mean return
+        double stdDev = 0.2;      // 20% annual standard deviation
+        double spotPrice = 5000;  // typical S&P500 spot price
 
-    // Run the financial model
-    financialModel.runModel(10000, spotPrice);
+        // Create FinancialModel object with user-provided input filename
+        FinancialModel financialModel(spotPrice, meanReturn, stdDev, inputFilename);
+
+        // Run the financial model
+        financialModel.runModel(10000, spotPrice);
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 1; // Terminate the program with an error code
+    }
 
     return 0;
 }
