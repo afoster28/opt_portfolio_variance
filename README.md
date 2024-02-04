@@ -1,5 +1,5 @@
 # opt_portfolio_variance
-##Option portfolio variance in CPP
+## Option portfolio variance in CPP
 
 Authors: Adam Foster, Sercan Akbay
 
@@ -9,12 +9,13 @@ Prerequisites: C++ compiler to run `opt_v12.cpp`, input data saved in the same d
 
 The program performs the following processing steps:
 * Read csv input containing options
+* Parameters given: $S = 5000, μ = 5\\%, σ = 20\\%
 * Extract days to maturity of the options
 * Calculate
-  * $S = 5000, μ = 5\\%, σ = 20\\%, t = Days To Maturity/365 = 60/365$
+  * t = Days To Maturity/365 = 60/365$
   * $μ_{log} = log(S) + (μ - σ^2/2)t$
   * $σ_{log} = \sqrt{σ^2t}$
-  * The variables were converted as above using the Black-Scholes formula, resulting in parameters for normal distribution of log prices
+  * The variables were converted as above using the Black-Scholes framework, resulting in parameters for the normal distribution of log prices
 * Set up random number generator for sampling
 * Sample log price 10,000 times
 * Exponentiate log prices to get prices
