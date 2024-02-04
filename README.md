@@ -5,7 +5,7 @@ Authors: Adam Foster, Sercan Akbay
 
 The program feeds in a portfolio of options, samples underlying asset prices at maturity, calculates payoffs, portfolio payoffs and summary statistics per portfolio and persists final data and reference data.
 
-Prerequisites: C++ compiler, input data in the same directory as `opt_v12.cpp` (e.g. sample_small.csv)
+Prerequisites: C++ compiler to run `opt_v12.cpp`, input data saved in the same directory (`sample_small.csv`, `sample_medium.csv`, `sample_large.csv`)
 
 The program performs the following processing steps:
 * Read csv input containing options
