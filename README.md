@@ -51,6 +51,7 @@ Potential improvements:
 * Integrated and ongoing testing
 
 Testing:
+* Active printing during program run: options processed, number of options loaded, portfolio statistics, data saving
 * Confirmed shape of the price sample is lognormal
 * Spot-checked option payouts as being in the right direction as per option type type and trade directionality
 * Reproduced `result_matrix.csv` mean, variance and standard deviation on payout data persisted in `combined_table.csv` under the 'complete' run
