@@ -56,4 +56,4 @@ Testing:
 * Confirmed shape of the price sample is lognormal
 * Spot-checked option payouts as being in the right direction as per option type type and trade directionality
 * Reproduced `result_matrix.csv` mean, variance and standard deviation on payout data persisted in `combined_table.csv` under the 'complete' run
-* Reconciled `result_matrix.csv`with the expected tables in `output_small.csv`, `output_medium.csv` and `output_large.csv`, showing low percentage differences
+* Reconciled `result_matrix.csv`with the expected tables in `output_small.csv`, `output_medium.csv` and `output_large.csv`, showing low percentage differences (worst median diff across mean, variance and standard deviation for small, medium and large samples is -1%)
