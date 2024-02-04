@@ -9,7 +9,7 @@ Prerequisites: C++ compiler to run `opt_v12.cpp`, input data saved in the same d
 
 The program performs the following processing steps:
 * Read csv input containing options
-* Parameters given: $S = 5000, μ = 5\\%, σ = 20\\%
+* Parameters given: $S = 5000, μ = 5\\%, σ = 20\\%$
 * Extract days to maturity of the options
 * Calculate
   * t = Days To Maturity/365 = 60/365$
@@ -35,10 +35,11 @@ Program features:
 * The workflow is easy to follow with a clear progression from prices $\rightarrow$ option payouts $\rightarrow$ portfolio payouts $\rightarrow$ summary statistics
 * Obtaining the underlying price distribution is efficient as it involves sampling from a distribution with known parameters, drawing on Black-Scholes theory and no path dependence for European options
   * This avoids tedious Monte Carlo simulations for price path, reducing the number of parameters and computation time
-  * The price distribution is generated once at the start of the process
+  * The price sample is generated once at the start of the process
+  * No convergence issues for end result
 * Persisting summary statistics `result_matrix.csv` and intermediate price-payout matrix `combined_table.csv` to CSV
-* Flexibility: the user can choose a 'complete' (entire input CSV is processed in one go) or 'sequential' run (in stages)
-  * The stages in 'Sequential' are portfolios with an incremental number of options, i.e. the first one contains option 1, the second one contains options 1 & 2, etc.
+* Flexibility: the user can choose a 'complete' (entire input CSV processed in one go) or 'sequential' run (in stages)
+  * The stages in 'sequential' are portfolios with an incremental number of options, i.e. the first one contains option 1, the second one contains options 1 & 2, etc.
   * Summary statistics are presented on-screen before and after each portfolio
   * Both 'complete' and 'sequential' make use of the same fundamental processing functions
 * User-friendliness: in the 'sequential' run the user can freely set a variance cutoff which stops the program if variance exceeds this cutoff, choose whether to proceed to the next portfolio (adding the next option), reset the process
@@ -46,7 +47,7 @@ Program features:
 
 Potential improvements:
 * Model objects could be reallocated to more classes and function scope set more accurately
-* Even more efficient approaches could be considered, e.g. sampling based on the outcomes of the normal distribution given its known shape or the covariance approach
+* Even more efficient approaches could be considered, e.g. sampling based on the outcomes of the normal distribution cdf given its known shape ($1/N$ convergence instead of $1/sqrt{N}$) or the covariance matrix approach
 * A manual option entry feature for the user
 * UI for remote launching of the program
 * Integrated and ongoing testing
@@ -54,6 +55,6 @@ Potential improvements:
 Testing:
 * Active printing during program run: options processed, number of options loaded, portfolio statistics, data saving
 * Confirmed shape of the price sample is lognormal
-* Spot-checked option payouts as being in the right direction as per option type type and trade directionality
-* Reproduced `result_matrix.csv` mean, variance and standard deviation on payout data persisted in `combined_table.csv` under the 'complete' run
-* Reconciled `result_matrix.csv`with the expected tables in `output_small.csv`, `output_medium.csv` and `output_large.csv`, showing low percentage differences (worst median diff across mean, variance and standard deviation for small, medium and large samples is -1%)
+* Spot-checked option payouts as being in the right direction as per option type and trade directionality
+* Reproduced `result_matrix.csv` mean, variance and standard deviation under the 'complete' run on payout data persisted in `combined_table.csv`
+* Reconciled `result_matrix.csv` for all three samples (small, medium, large) with the expected tables in `output_small.txt`, `output_medium.txt` and `output_large.txt`, showing low percentage differences (worst median percentage difference across means, variances and standard deviations for small, medium and large samples is 1%)
